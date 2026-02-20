@@ -9,13 +9,10 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.Message
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.startActivityForResult
-import com.codingdevs.thermal_printer.bluetooth.BluetoothConnection
-import com.codingdevs.thermal_printer.bluetooth.BluetoothConstants
 import com.codingdevs.thermal_printer.bluetooth.BluetoothService
 import com.codingdevs.thermal_printer.bluetooth.BluetoothService.Companion.TAG
 import com.codingdevs.thermal_printer.usb.USBPrinterService
@@ -57,48 +54,50 @@ class ThermalPrinterPlugin : FlutterPlugin,
         channel = MethodChannel(binding.binaryMessenger, methodChannel)
         channel.setMethodCallHandler(this)
 
+        // EventChannel Bluetooth
+        btStateChannel = EventChannel(
+            binding.binaryMessenger,
+            "com.codingdevs.thermal_printer/bt_state"
+        )
+
+        btStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                btSink = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                btSink = null
+            }
+        })
+
+        // EventChannel USB
+        usbStateChannel = EventChannel(
+            binding.binaryMessenger,
+            "com.codingdevs.thermal_printer/usb_state"
+        )
+
+        usbStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                usbSink = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                usbSink = null
+            }
+        })
+
         adapter = USBPrinterService.getInstance(usbHandler)
         context?.let { adapter.init(it) }
 
         bluetoothService = BluetoothService.getInstance(bluetoothHandler)
     }
 
-    btStateChannel = EventChannel(
-    binding.binaryMessenger,
-    "com.codingdevs.thermal_printer/bt_state"
-    )
-
-    btStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
-        override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-            btSink = events
-        }
-
-        override fun onCancel(arguments: Any?) {
-            btSink = null
-        }
-    })
-
-    usbStateChannel = EventChannel(
-    binding.binaryMessenger,
-    "com.codingdevs.thermal_printer/usb_state"
-    )
-
-    usbStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
-        override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-            usbSink = events
-        }
-
-        override fun onCancel(arguments: Any?) {
-            usbSink = null
-        }
-    })
-
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
-        bluetoothService.setHandler(null)
-        adapter.setHandler(null)
         btStateChannel.setStreamHandler(null)
         usbStateChannel.setStreamHandler(null)
+        bluetoothService.setHandler(null)
+        adapter.setHandler(null)
     }
 
     // ==========================
@@ -106,9 +105,7 @@ class ThermalPrinterPlugin : FlutterPlugin,
     // ==========================
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-
         when (call.method) {
-
             "getBluetoothList" -> {
                 isBle = false
                 isScan = true
@@ -163,7 +160,7 @@ class ThermalPrinterPlugin : FlutterPlugin,
     }
 
     // ==========================
-    // PERMISSIONS (CORREGIDO)
+    // PERMISSIONS
     // ==========================
 
     private fun checkPermissions(): Boolean {
@@ -181,11 +178,11 @@ class ThermalPrinterPlugin : FlutterPlugin,
         }
 
         val notGranted = permissions.filter {
-            ActivityCompat.checkSelfPermission(ctx, it) != PackageManager.PERMISSION_GRANTED
+            ActivityCompat.checkSelfPermission(ctx, it)
+            != PackageManager.PERMISSION_GRANTED
         }
 
         if (notGranted.isNotEmpty()) {
-
             ActivityCompat.requestPermissions(
                 activity,
                 notGranted.toTypedArray(),
@@ -228,11 +225,9 @@ class ThermalPrinterPlugin : FlutterPlugin,
         resultCode: Int,
         data: Intent?
     ): Boolean {
-
         if (requestCode == PERMISSION_ENABLE_BLUETOOTH) {
             requestPermissionBT = false
         }
-
         return true
     }
 
