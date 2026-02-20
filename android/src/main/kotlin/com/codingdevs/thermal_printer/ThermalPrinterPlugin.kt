@@ -41,6 +41,12 @@ class ThermalPrinterPlugin : FlutterPlugin,
     private lateinit var adapter: USBPrinterService
     private lateinit var bluetoothService: BluetoothService
 
+    private lateinit var btStateChannel: EventChannel
+    private lateinit var usbStateChannel: EventChannel
+
+    private var btSink: EventChannel.EventSink? = null
+    private var usbSink: EventChannel.EventSink? = null
+
     // ==========================
     // ENGINE
     // ==========================
@@ -57,10 +63,42 @@ class ThermalPrinterPlugin : FlutterPlugin,
         bluetoothService = BluetoothService.getInstance(bluetoothHandler)
     }
 
+    btStateChannel = EventChannel(
+    binding.binaryMessenger,
+    "com.codingdevs.thermal_printer/bt_state"
+    )
+
+    btStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
+        override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+            btSink = events
+        }
+
+        override fun onCancel(arguments: Any?) {
+            btSink = null
+        }
+    })
+
+    usbStateChannel = EventChannel(
+    binding.binaryMessenger,
+    "com.codingdevs.thermal_printer/usb_state"
+    )
+
+    usbStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
+        override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+            usbSink = events
+        }
+
+        override fun onCancel(arguments: Any?) {
+            usbSink = null
+        }
+    })
+
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
         bluetoothService.setHandler(null)
         adapter.setHandler(null)
+        btStateChannel.setStreamHandler(null)
+        usbStateChannel.setStreamHandler(null)
     }
 
     // ==========================
