@@ -178,8 +178,7 @@ class ThermalPrinterPlugin : FlutterPlugin,
         }
 
         val notGranted = permissions.filter {
-            ActivityCompat.checkSelfPermission(ctx, it)
-            != PackageManager.PERMISSION_GRANTED
+            ActivityCompat.checkSelfPermission(ctx, it) != PackageManager.PERMISSION_GRANTED
         }
 
         if (notGranted.isNotEmpty()) {
