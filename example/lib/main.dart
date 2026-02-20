@@ -6,14 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:thermal_printer/esc_pos_utils_platform/esc_pos_utils_platform.dart';
 import 'package:thermal_printer/thermal_printer.dart';
 import 'package:image/image.dart' as img;
-import 'package:dart_ping_ios/dart_ping_ios.dart';
 import 'image_utils.dart';
 
 void main() {
-  // Register DartPingIOS
-  if (Platform.isIOS) {
-    DartPingIOS.register();
-  }
   runApp(const MyApp());
 }
 
